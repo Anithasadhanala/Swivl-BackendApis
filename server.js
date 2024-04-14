@@ -3,15 +3,20 @@ const {v4 : uuidv4} = require('uuid')
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const app = express();
+
+const {sql,staticStrings,jwtSecretKey} = require("./data");
 const Database = require("./dbConnection")
-const configurationData = require("./configurationData")
+const configurationData = require("./config")
 
-
+const app = express();
 app.use(bodyParser.json());
 
+
+// Instance of configured DB
 const db = new Database(configurationData)
 
+
+// middleware function for secure routes
 const authentication = (req, res, next) => {
     let jwtToken;
     const authHeader = req.headers["authorization"];
@@ -22,7 +27,7 @@ const authentication = (req, res, next) => {
       res.status(401);
       res.send("Invalid JWT Token");
     } else {
-      jwt.verify(jwtToken, "SECRET", async (error, payload) => {
+      jwt.verify(jwtToken, jwtSecretKey.key , async (error, payload) => {
         if (error) {
           res.status(401);
           res.send("Invalid JWT Token");
@@ -32,6 +37,8 @@ const authentication = (req, res, next) => {
       });
     }
   };
+
+/*********************************************    USER CLASS STARTS HERE    *********************************************************** */
 
 class User {
 
@@ -44,12 +51,13 @@ class User {
         this.phone = phone;
     }
 
+    // method for checking specific user Exists or not
     async userExists(userName) {
         console.log(userName);
         try {
-            let sql = "SELECT * FROM users WHERE userName=?";
+            const query =sql.GET_userQuery;
             const data = await new Promise((resolve, reject) => {
-                db.myQuery(sql, [userName], (err, data) => {
+                db.myQuery(query, [userName], (err, data) => {
                     if (err) reject(err);
                     else resolve(data);
                 });
@@ -63,20 +71,14 @@ class User {
     }
 
 
-    async registerUser(details){
-
-        const {userName, email, userPassword, gender, location, phone} = details;
-        if(  (await this.userExists(userName)).length == 1){
-            return "User Already Exists.";
-        }
+    // method for checking specific mail Exists or not
+    async emailExists (email){
         try {
-            const hashedPassword = await bcrypt.hash(userPassword, 10);
-            const sql = "INSERT INTO users (id, userName, phone, email, gender, location, userPassword) VALUES (?,?,?,?,?,?,?) ;";
-            const id = uuidv4();
+            const query = sql.GET_emailQuery;
             const data = await new Promise((resolve, reject) => {
-                db.myQuery(sql, [id,userName,phone,email, gender, location, hashedPassword], (err, data) => {
+                db.myQuery(query, [email], (err, data) => {
                     if (err) reject(err);
-                    else resolve("successfully user inserted");
+                    else resolve(data);
                 });
             });
             return data;
@@ -87,7 +89,35 @@ class User {
     }
 
 
+    // method for user Registration
+    async registerUser(details){
 
+        const {userName, email, userPassword, gender, location, phone} = details;
+        if(  (await this.userExists(userName)).length == 1){
+            return staticStrings.userAlreadyExists;
+        }
+        if((await this.emailExists(email)).length > 0){
+            return staticStrings.emailAlreadyExists;
+        }
+        try {
+            const hashedPassword = await bcrypt.hash(userPassword, 10);
+            const query = sql.POST_newUserQuery;
+            const id = uuidv4();
+            const data = await new Promise((resolve, reject) => {
+                db.myQuery(query, [id,userName,phone,email, gender, location, hashedPassword], (err, data) => {
+                    if (err) reject(err);
+                    else resolve(staticStrings.userRegistered);
+                });
+            });
+            return data;
+        }
+        catch (error) {
+            return error;
+        }
+    }
+
+
+    // method for user Login
     async loginUser(details){
         
         const { userName,userPassword} = details;
@@ -100,33 +130,64 @@ class User {
                 const payload = {
                     userName: userName,
                 };
-                const jwtToken = jwt.sign(payload, "SECRET");
+                const jwtToken = jwt.sign(payload, jwtSecretKey.key);
                 return ({ jwtToken });
             } else {
-            return  "Invalid Password"
+            return  staticStrings.invalidPassword;
             }
         }
-        return "user doesn't exists."
+        return staticStrings.userDoesNotExists;
     };
 
-  
- 
+
+    // method for reseting new password 
+    async resetPassword(details){
+        const {newPassword,confirmPassword,id} = details
+        let password = newPassword;
+        if(newPassword === confirmPassword){
+            password = await bcrypt.hash(newPassword, 10);
+            try{
+                const query = sql.PUT_resetPasswordQuery;
+                const data = await new Promise((resolve, reject) => {
+                    db.myQuery(query, [password, id], (err, data) => {
+                        if (err) {
+                            console.error(err); // Log the error for debugging
+                            reject(err);
+                        } else {
+                            resolve(staticStrings.passwordReset);
+                        }
+                    });
+                });
+                return data;
+            }
+            catch (error) {
+                console.error(error); // Log any catched errors for debugging
+                return error;
+            }
+        }
+        return staticStrings.passwordMismatch;
+}
+
+
+    // method for user profile updations
     async updateUserProfile(details) {
         const { userName , userPassword,location,email,phone,gender , id } = details;
-
         try {
-            const sql = `UPDATE users SET userName = IFNULL(?, userName),userPassword = IFNULL(?, userPassword), gender = IFNULL(?, gender),phone = IFNULL(?, phone), location = IFNULL(?, location),email = IFNULL(?, email) WHERE id = ?`;
+            let password = userPassword
+            if(password != undefined){
+                 password = await bcrypt.hash(userPassword, 10);
+            }
+            const query = sql.PUT_updateUserProfileQuery;
             const data = await new Promise((resolve, reject) => {
-                db.myQuery(sql, [userName,userPassword,gender,phone,location,email, id], (err, data) => {
+                db.myQuery(query, [userName,password,gender,phone,location,email, id], (err, data) => {
                     if (err) {
                         console.error(err); // Log the error for debugging
                         reject(err);
                     } else {
-                        resolve("User data successfully updated");
+                        resolve(staticStrings.userProfileUpdated);
                     }
                 });
             });
-
             return data;
         } catch (error) {
             console.error(error); // Log any catched errors for debugging
@@ -135,17 +196,17 @@ class User {
     }
 
 
+    // method for deleting specific user
     async deleteUser(id) {
-        
         try {
-            const sql = "DELETE FROM users WHERE id = ?;"        ;
+            const query = sql.DELETE_deleteUserQuery;
             const data = await new Promise((resolve, reject) => {
-                db.myQuery(sql, [id], (err, data) => {
+                db.myQuery(query, [id], (err, data) => {
                     if (err) {
                         console.error(err); // Log the error for debugging
                         reject(err);
                     } else {
-                        resolve("User Deleted Successfully");
+                        resolve(staticStrings.userDeleted);
                     }
                 });
             });
@@ -157,7 +218,7 @@ class User {
     }
 }
 
-
+/**********************************************    TRAVEL CLASS STARTS HERE     ********************************************* */
 
 class TravelDairy {
 
@@ -171,15 +232,17 @@ class TravelDairy {
         this.category  = category;
     }
 
+
+    // method for creating new travel location
     async createNewTravel(details){
         const {title, description, location, travelledDate, photo='', category,userId} = details;
         try {
             const id = uuidv4();
-            const sql = "INSERT INTO traveldairy (id,userId, title, description,category, location, travelledDate, photo) VALUES (?,?,?,?,?,?,?,?) ;";
+            const query = sql.POST_newTravelQuery;
             const data = await new Promise((resolve, reject) => {
-                db.myQuery(sql, [id,userId, title, description,category, location, travelledDate, photo], (err, data) => {
+                db.myQuery(query, [id,userId, title, description,category, location, travelledDate, photo], (err, data) => {
                     if (err) reject(err);
-                    else resolve("Your travelling moment is successfully added");
+                    else resolve(staticStrings.newTravelAdded);
                 });
             });
             return data;
@@ -189,11 +252,13 @@ class TravelDairy {
         }
     }
 
+
+    // method for fetching specific travel location
     async getSpecificTravel(id){
         try {
-            let sql = "SELECT * FROM traveldairy WHERE id=?";
+            const query = sql.GET_specificTravelQuery;
             const data = await new Promise((resolve, reject) => {
-                db.myQuery(sql, [id], (err, data) => {
+                db.myQuery(query, [id], (err, data) => {
                     if (err) reject(err);
                     else resolve(data);
                 });
@@ -206,21 +271,22 @@ class TravelDairy {
         }
     }
 
+
+    // method for updating travelling location
     async updateTraveldairy(details){
         const { id, title, description,category, location, travelledDate, photo} = details
         try {
-            const sql = `UPDATE traveldairy SET title = IFNULL(?, title),description = IFNULL(?, description), category = IFNULL(?, category),photo = IFNULL(?, photo), location = IFNULL(?, location),travelledDate = IFNULL(?, travelledDate) WHERE id = ?`;
+            const query = sql.PUT_updateTravelDairyQuery;
             const data = await new Promise((resolve, reject) => {
-                db.myQuery(sql, [title,description,category,photo,location,travelledDate, id], (err, data) => {
+                db.myQuery(query, [title,description,category,photo,location,travelledDate, id], (err, data) => {
                     if (err) {
                         console.error(err); // Log the error for debugging
                         reject(err);
                     } else {
-                        resolve("Travel data is successfully updated");
+                        resolve(staticStrings.travelUpdated);
                     }
                 });
             });
-
             return data;
         } catch (error) {
             console.error(error); // Log any catched errors for debugging
@@ -229,37 +295,57 @@ class TravelDairy {
     }
 
 
-        async allTravelsOfSpecificUser(id){
-            console.log(id,"^^^^^^^^^^^^^^")
-            try {
-                let sql = "SELECT * FROM usertraveldairy INNER JOIN traveldairy ON usertraveldairy.travelDairyId = traveldairy.id where usertraveldairy.userId = ?";
-                const data = await new Promise((resolve, reject) => {
-                    db.myQuery(sql, [id], (err, data) => {
-                        if (err) reject(err);
-                        else resolve(data);
-                    });
+    // method for fetching all travellings of specific user
+    async allTravelsOfSpecificUser(id){
+        try {
+            const query = sql.GET_allTravelsOfSingleUserQuery;
+            const data = await new Promise((resolve, reject) => {
+                db.myQuery(query, [id], (err, data) => {
+                    if (err) reject(err);
+                    else resolve(data);
                 });
-                console.log(data)
-                return data;
-            }
-            catch (error) {
-                return error;
-            }
+            });
+            console.log(data)
+            return data;
         }
-    
+        catch (error) {
+            return error;
+        }
+    }
+
+
+    // method for filtering travels based on query parameters
+    async filteringTravels (details){
+        const {offset,order,order_by,limit,search_q} = details
+        try {
+            const query = sql.GET_filteringTravelsQuery
+            const data = await new Promise((resolve, reject) => {
+                db.myQuery(query, [search_q,order_by,order,limit,offset], (err, data) => {
+                    if (err) reject(err);
+                    else resolve(data);
+                });
+            });
+            return data;
+        }
+        catch (error) {
+            return error;
+        }
+
+    }
     
 
+    // method for deleting a specific travelling location
     async deleteTraveldairy(id) {
         
         try {
-            const sql = "DELETE FROM traveldairy WHERE id = ?;"        ;
+            const query = sql.DELETE_deleteTravelDairyQuery;
             const data = await new Promise((resolve, reject) => {
-                db.myQuery(sql, [id], (err, data) => {
+                db.myQuery(query, [id], (err, data) => {
                     if (err) {
                         console.error(err); // Log the error for debugging
                         reject(err);
                     } else {
-                        resolve("Traveldairy is Deleted Successfully");
+                        resolve(staticStrings.travelDeleted);
                     }
                 });
             });
@@ -273,6 +359,15 @@ class TravelDairy {
 
 }
 
+
+
+
+
+/********************************************************   ROUTES STARTS FROM HERE  *************************************************** */
+
+
+
+//GET user existance results
 app.get('/user/:username',async(req,res)=>{
    const obj = new User();
    const userName = req.params.username
@@ -281,6 +376,7 @@ app.get('/user/:username',async(req,res)=>{
 });
 
 
+//POST user Registration
 app.post('/register',async(req,res)=>{
     const obj = new User();
     const details = req.body;
@@ -288,6 +384,9 @@ app.post('/register',async(req,res)=>{
     res.send(result)
  });
 
+
+
+//POST user Login
  app.post('/login',async(req,res)=>{
     const obj = new User();
     const details = req.body;
@@ -295,6 +394,17 @@ app.post('/register',async(req,res)=>{
     res.send(result);
  })
 
+
+//POST forgot password email Existance
+app.post('/forgot-password/email',async(req,res)=>{
+const obj = new User();
+const {email} = req.body;
+const result = await obj.emailExists(email);
+res.send(result);
+});
+
+
+//PUT  user profile update
  app.put('/profile-update',authentication,async(req,res)=>{
     const obj = new User();
     console.log(req.body)
@@ -303,6 +413,17 @@ app.post('/register',async(req,res)=>{
     res.send(result);
  })
 
+
+//PUT reset the password
+app.put('/forgot-password/reset-password',async(req,res)=>{
+const obj = new User();
+const details = req.body;
+const result = await obj.resetPassword(details);
+res.send(result);
+});
+
+
+//DELETE user delete
  app.delete('/delete-user/:id',authentication,async(req,res)=>{
     const obj = new User();
     const id = req.params.id;
@@ -311,6 +432,14 @@ app.post('/register',async(req,res)=>{
  });
 
 
+
+
+
+
+
+
+
+//GET fetching a specific travel
  app.get('/traveldairy/:id',authentication,async(req,res)=>{
     const obj = new TravelDairy();
     const id = req.params.id;
@@ -320,6 +449,35 @@ app.post('/register',async(req,res)=>{
  });
 
 
+
+//GET fetch all travels of a specific user
+app.get('/all-travels/:id',authentication,async(req,res)=>{
+const obj = new TravelDairy();
+const userId = req.params.id;
+const result = await obj.allTravelsOfSpecificUser(userId)
+res.send(result)
+});
+
+
+
+//GET all filtered travels
+app.get('/travels/',authentication,async(req,res)=>{
+    const obj = new TravelDairy();
+    const {offset = 0,limit = 10,order = "ASC",order_by = "title",search_q = ""} = req.query;
+    const details = {
+        "offset" : offset,
+        "limit" : limit,
+        "order" : order,
+        "order_by" : order_by,
+        "search_q": '%'+search_q+'%',
+    }
+    const result = await obj.filteringTravels(details)
+    res.send(result)
+ });
+
+
+
+//POST creating new travel dairy
  app.post('/new-traveldairy',authentication,async(req,res)=>{
     const obj = new TravelDairy();
     const details = req.body;
@@ -329,6 +487,7 @@ app.post('/register',async(req,res)=>{
 
 
 
+//PUT updating travel dairy
 app.put('/update-traveldairy',authentication,async(req,res)=>{
     const obj = new TravelDairy();
     console.log(req.body)
@@ -338,20 +497,12 @@ app.put('/update-traveldairy',authentication,async(req,res)=>{
  })
 
 
+//DELET a specific travelDairy
  app.delete('/delete-traveldairy/:id',authentication,async(req,res)=>{
     const obj = new TravelDairy();
     const id = req.params.id;
     const result = await obj.deleteTraveldairy(id);
     res.send(result);
- });
-
-
- 
- app.get('/all-travels/:id',async(req,res)=>{
-    const obj = new TravelDairy();
-    const userId = req.params.id;
-    const result = await obj.allTravelsOfSpecificUser(userId)
-    res.send(result)
  });
 
 

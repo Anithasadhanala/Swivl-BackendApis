@@ -9,7 +9,6 @@ CREATE TABLE users (
     userPassword VARCHAR(255) NOT NULL
 );
 
-
 /* Query to create TRAVEL-DAIRY table  **/
 CREATE TABLE travelDairy (
     id VARCHAR(50) PRIMARY KEY,
