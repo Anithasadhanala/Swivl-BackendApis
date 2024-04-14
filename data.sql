@@ -13,12 +13,14 @@ CREATE TABLE users (
 /* Query to create TRAVEL-DAIRY table  **/
 CREATE TABLE travelDairy (
     id VARCHAR(50) PRIMARY KEY,
+    userId VARCHAR(50) NOT NULL,
     title VARCHAR(100) NOT NULL,
     description VARCHAR(255) NOT NULL,
     category VARCHAR(20) NOT NULL,
     location VARCHAR(255) NOT NULL,
     travelledDate Date NOT NULL,
-    photo VARCHAR(255)
+    photo VARCHAR(255),
+    CONSTRAINT fk_userId FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
 );
 
 
@@ -47,3 +49,30 @@ INSERT INTO userTravelDairy (userId, travelDairyId)
 VALUES ('1', '1'),
        ('1', '2'),
        ('2', '3');
+
+
+
+
+
+DELIMITER //
+
+CREATE TRIGGER add_userTraveldairy_row AFTER INSERT ON travelDairy
+FOR EACH ROW
+BEGIN
+    INSERT INTO usertraveldairy (userId, travelDairyId) VALUES (NEW.userId, NEW.id);
+END;
+//
+
+DELIMITER ;
+
+
+DELIMITER //
+
+CREATE TRIGGER delete_userTraveldairy_row BEFORE DELETE ON user
+FOR EACH ROW
+BEGIN
+    DELETE FROM usertraveldairy WHERE userId = OLD.id;
+END;
+//
+
+DELIMITER ;

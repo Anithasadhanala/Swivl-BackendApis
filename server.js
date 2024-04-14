@@ -135,13 +135,12 @@ class User {
     }
 
 
-    async deleteUser(details) {
-        const { userName} = details;
-
+    async deleteUser(id) {
+        
         try {
-            const sql = "DELETE FROM users WHERE userName = ?;"        ;
+            const sql = "DELETE FROM users WHERE id = ?;"        ;
             const data = await new Promise((resolve, reject) => {
-                db.myQuery(sql, [userName], (err, data) => {
+                db.myQuery(sql, [id], (err, data) => {
                     if (err) {
                         console.error(err); // Log the error for debugging
                         reject(err);
@@ -160,12 +159,123 @@ class User {
 
 
 
+class TravelDairy {
 
 
-app.get('/user',async(req,res)=>{
+    constructor(title, description,location,date,photo,category){
+        this.title = title;
+        this.description =description;
+        this.location = location;
+        this.date = date;
+        this.photo = photo;
+        this.category  = category;
+    }
+
+    async createNewTravel(details){
+        const {title, description, location, travelledDate, photo='', category,userId} = details;
+        try {
+            const id = uuidv4();
+            const sql = "INSERT INTO traveldairy (id,userId, title, description,category, location, travelledDate, photo) VALUES (?,?,?,?,?,?,?,?) ;";
+            const data = await new Promise((resolve, reject) => {
+                db.myQuery(sql, [id,userId, title, description,category, location, travelledDate, photo], (err, data) => {
+                    if (err) reject(err);
+                    else resolve("Your travelling moment is successfully added");
+                });
+            });
+            return data;
+        }
+        catch (error) {
+            return error;
+        }
+    }
+
+    async getSpecificTravel(id){
+        try {
+            let sql = "SELECT * FROM traveldairy WHERE id=?";
+            const data = await new Promise((resolve, reject) => {
+                db.myQuery(sql, [id], (err, data) => {
+                    if (err) reject(err);
+                    else resolve(data);
+                });
+            });
+            console.log(data)
+            return data;
+        }
+        catch (error) {
+            return error;
+        }
+    }
+
+    async updateTraveldairy(details){
+        const { id, title, description,category, location, travelledDate, photo} = details
+        try {
+            const sql = `UPDATE traveldairy SET title = IFNULL(?, title),description = IFNULL(?, description), category = IFNULL(?, category),photo = IFNULL(?, photo), location = IFNULL(?, location),travelledDate = IFNULL(?, travelledDate) WHERE id = ?`;
+            const data = await new Promise((resolve, reject) => {
+                db.myQuery(sql, [title,description,category,photo,location,travelledDate, id], (err, data) => {
+                    if (err) {
+                        console.error(err); // Log the error for debugging
+                        reject(err);
+                    } else {
+                        resolve("Travel data is successfully updated");
+                    }
+                });
+            });
+
+            return data;
+        } catch (error) {
+            console.error(error); // Log any catched errors for debugging
+            return error;
+        }
+    }
+
+
+        async allTravelsOfSpecificUser(id){
+            console.log(id,"^^^^^^^^^^^^^^")
+            try {
+                let sql = "SELECT * FROM usertraveldairy INNER JOIN traveldairy ON usertraveldairy.travelDairyId = traveldairy.id where usertraveldairy.userId = ?";
+                const data = await new Promise((resolve, reject) => {
+                    db.myQuery(sql, [id], (err, data) => {
+                        if (err) reject(err);
+                        else resolve(data);
+                    });
+                });
+                console.log(data)
+                return data;
+            }
+            catch (error) {
+                return error;
+            }
+        }
+    
+    
+
+    async deleteTraveldairy(id) {
+        
+        try {
+            const sql = "DELETE FROM traveldairy WHERE id = ?;"        ;
+            const data = await new Promise((resolve, reject) => {
+                db.myQuery(sql, [id], (err, data) => {
+                    if (err) {
+                        console.error(err); // Log the error for debugging
+                        reject(err);
+                    } else {
+                        resolve("Traveldairy is Deleted Successfully");
+                    }
+                });
+            });
+            return data;
+        } catch (error) {
+            console.error(error); // Log any catched errors for debugging
+            return error;
+        }
+    }
+
+
+}
+
+app.get('/user/:username',async(req,res)=>{
    const obj = new User();
-   const details = req.body;
-   const {userName} = details;
+   const userName = req.params.username
    const result = await obj.userExists(userName)
    res.send(result)
 });
@@ -174,7 +284,6 @@ app.get('/user',async(req,res)=>{
 app.post('/register',async(req,res)=>{
     const obj = new User();
     const details = req.body;
-    const {userName} = details;
     const result = await obj.registerUser(details)
     res.send(result)
  });
@@ -194,16 +303,62 @@ app.post('/register',async(req,res)=>{
     res.send(result);
  })
 
- app.delete('/delete-user',authentication,async(req,res)=>{
+ app.delete('/delete-user/:id',authentication,async(req,res)=>{
     const obj = new User();
+    const id = req.params.id;
+    const result = await obj.deleteUser(id);
+    res.send(result);
+ });
+
+
+ app.get('/traveldairy/:id',authentication,async(req,res)=>{
+    const obj = new TravelDairy();
+    const id = req.params.id;
+    const details = req.body;
+    const result = await obj.getSpecificTravel(id)
+    res.send(result)
+ });
+
+
+ app.post('/new-traveldairy',authentication,async(req,res)=>{
+    const obj = new TravelDairy();
+    const details = req.body;
+    const result = await obj.createNewTravel(details)
+    res.send(result)
+ });
+
+
+
+app.put('/update-traveldairy',authentication,async(req,res)=>{
+    const obj = new TravelDairy();
     console.log(req.body)
     const details = req.body;
-    const result = await obj.deleteUser(details);
+    const result = await obj.updateTraveldairy(details);
+    res.send(result);
+ })
+
+
+ app.delete('/delete-traveldairy/:id',authentication,async(req,res)=>{
+    const obj = new TravelDairy();
+    const id = req.params.id;
+    const result = await obj.deleteTraveldairy(id);
     res.send(result);
  });
 
 
  
+ app.get('/all-travels/:id',async(req,res)=>{
+    const obj = new TravelDairy();
+    const userId = req.params.id;
+    const result = await obj.allTravelsOfSpecificUser(userId)
+    res.send(result)
+ });
+
+
+
+
+
+
 
 app.listen(4000, ()=>{
     console.log("I am ready at 4000...")
