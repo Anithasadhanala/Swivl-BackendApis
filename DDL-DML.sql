@@ -52,7 +52,7 @@ VALUES ('1', '1'),
 
 
 
-
+/* Triggger for automatically adding a feild in junction table when a new travel is added at travelDairy*/
 DELIMITER //
 
 CREATE TRIGGER add_userTraveldairy_row AFTER INSERT ON travelDairy
@@ -65,6 +65,8 @@ END;
 DELIMITER ;
 
 
+
+/*  Trigger for automatically deleting all the user related fields from the junction table when user from users table deleted   */
 DELIMITER //
 
 CREATE TRIGGER delete_userTraveldairy_row BEFORE DELETE ON user
