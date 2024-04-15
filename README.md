@@ -42,7 +42,18 @@ DataBase : Mysql v8.0, Mysql workbench (Hosted at freesqlDB)
 5. Middleware Authorization function for secure routes.
 6. Added ER-schema of the Database & Documentation for using these APIs.
 
-``` 
+```
+
+# DataBase host at: 
+
+```
+url : https://www.phpmyadmin.co/
+server : sql6.freesqldatabase.com
+userName : 	sql6698988
+password : giB72Mv361
+```
+
+
 
 
 # Remotely Published host : 
