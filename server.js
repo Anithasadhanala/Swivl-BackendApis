@@ -53,7 +53,6 @@ class User {
 
     // method for checking specific user Exists or not
     async userExists(userName) {
-        console.log(userName);
         try {
             const query =sql.GET_userQuery;
             const data = await new Promise((resolve, reject) => {
@@ -62,7 +61,6 @@ class User {
                     else resolve(data);
                 });
             });
-            console.log(data)
             return data;
         }
         catch (error) {
@@ -217,15 +215,20 @@ class User {
     // method for deleting specific user
     async deleteUser(id) {
         try {
-            if((await this.deleteAllJunctionEntries(id))===false){
-                return staticStrings.deleteAllJunctionEntries;
+            const junctionUserDeleted =async () =>{
+                if((await this.deleteAllJunctionEntries(id))===false){
+                    return false;
+                }
+                return true;
             }
+            
             const query = sql.DELETE_deleteUserQuery;
             const data = await new Promise((resolve, reject) => {
                 db.myQuery(query, [id], (err, data) => {
                     if (err) {
                         reject(err);
                     } else {
+                        if(junctionUserDeleted()===false) reject(staticStrings.deleteAllJunctionEntries)
                         resolve(staticStrings.userDeleted);
                     }
                 });
@@ -279,14 +282,22 @@ class TravelDairy {
                 userId : userId,
                 travelDairyId  : id,
             }
-            if((await this.createEntryInJunctionTable(details)) === false){
-                return staticStrings.junctionTableNotCreation;
+
+            const juctionFieldCreaction =async () =>{
+                if((await this.createEntryInJunctionTable(details)) === false){
+                    return false
+                }
+                return true;
             }
+            
             const query = sql.POST_newTravelQuery;
             const data = await new Promise((resolve, reject) => {
-                db.myQuery(query, [id,userId, title, description,category, location, travelledDate, photo], (err, data) => {
+                 db.myQuery(query, [id,userId, title, description,category, location, travelledDate, photo], (err, data) => {
                     if (err) reject(err);
-                    else resolve(staticStrings.newTravelAdded);
+                    else{
+                        if(juctionFieldCreaction()===false) reject(staticStrings.junctionTableNotCreation)
+                        resolve(staticStrings.newTravelAdded);
+                    } 
                 });
             });
             return data;
@@ -307,7 +318,6 @@ class TravelDairy {
                     else resolve(data);
                 });
             });
-            console.log(data)
             return data;
         }
         catch (error) {
@@ -349,7 +359,6 @@ class TravelDairy {
                     else resolve(data);
                 });
             });
-            console.log(data)
             return data;
         }
         catch (error) {
@@ -451,7 +460,6 @@ res.send(result);
 //PUT  user profile update
  app.put('/profile-update',authentication,async(req,res)=>{
     const obj = new User();
-    console.log(req.body)
     const details = req.body;
     const result = await obj.updateUserProfile(details);
     res.send(result);
@@ -534,7 +542,6 @@ app.get('/travels/',authentication,async(req,res)=>{
 //PUT updating travel dairy
 app.put('/update-traveldairy',authentication,async(req,res)=>{
     const obj = new TravelDairy();
-    console.log(req.body)
     const details = req.body;
     const result = await obj.updateTraveldairy(details);
     res.send(result);

@@ -33,6 +33,14 @@ CREATE TABLE usertraveldairy (
 );
 
 
+ALTER TABLE usertraveldairy
+ADD CONSTRAINT fk_user_traveldairy FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE usertraveldairy
+ ADD CONSTRAINT fk_user_traveldairy3 FOREIGN KEY (travelDairyId) REFERENCES traveldairy(id) ON DELETE CASCADE;
+
+
+
 
 /* Query to Inert new users in USERS table  **/
 INSERT INTO users (id, userName, phone, email, gender, location, userPassword) 
