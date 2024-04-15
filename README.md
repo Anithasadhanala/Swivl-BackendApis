@@ -10,15 +10,15 @@ This is an initial version of the Swivl Backend APIs
 
 This project is purely implemented for the keeping track of the provided Documentation.
 
-Technologies used are :
+# Technologies used are :
 
-
+```
 server : oops Javascript, Node.js v21.5.0, Express.js v4.0, POSTMAN (testing).
 
 other packages & lib : uuid library, bcrypt library, jwt library, body parser package, nodemon(dev)
 
 DataBase : Mysql v8.0, Mysql workbench (Hosted at freesqlDB)
-
+```
 
 # Main Features of the Travel Dairy APIs : 
 
@@ -51,6 +51,20 @@ DataBase : Mysql v8.0, Mysql workbench (Hosted at freesqlDB)
 https://swivl-backendapis.onrender.com
 
 ```
+
+# Test the APIs using POSTMAN collection Remotely :
+
+step 1 : Signin on your postman
+step 2 : click on import
+step 3 : paste the url
+```
+https://api.postman.com/collections/34264027-b73756c6-0a8a-40f5-901c-a43c0eedbcff?access_key=PMAT-01HVFZJQPB7QNR3MRVQHZG7NAS
+```
+step 4 : make as a copy
+step 5 : Now, you can test the APIs remotely :D
+
+
+
 
 # DataBase ER - Schema
 
