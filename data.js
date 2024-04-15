@@ -10,7 +10,9 @@ const sql = {
     PUT_updateTravelDairyQuery :  `UPDATE traveldairy SET title = IFNULL(?, title),description = IFNULL(?, description), category = IFNULL(?, category),photo = IFNULL(?, photo), location = IFNULL(?, location),travelledDate = IFNULL(?, travelledDate) WHERE id = ?`,
     GET_allTravelsOfSingleUserQuery : "SELECT * FROM usertraveldairy INNER JOIN traveldairy ON usertraveldairy.travelDairyId = traveldairy.id where usertraveldairy.userId = ?",
     GET_filteringTravelsQuery : `SELECT * FROM traveldairy WHERE title LIKE ? ORDER BY ? ? LIMIT ? OFFSET ?`,
-    DELETE_deleteTravelDairyQuery :  "DELETE FROM traveldairy WHERE id = ?;"  
+    DELETE_deleteTravelDairyQuery :  "DELETE FROM traveldairy WHERE id = ?;"  ,
+    POST_junctionTableEntry : "INSERT INTO usertraveldairy (userId,travelDairyId) VALUES (?,?)",
+    DELETE_junctionTableEntries : "DELETE FROM usertraveldairy WHERE userId = ?;" ,
 }
 
 
@@ -32,7 +34,10 @@ const staticStrings = {
     newTravelAdded : "New Travel added Successfully.",
     travelUpdated : "Travel details are updated Successfully.",
     travelDeleted : "Travel deleted Successfully.",
-    passwordMismatch : "New Password and Confirm Password are not Equal"
+    passwordMismatch : "New Password and Confirm Password are not Equal",
+    junctionTableNotCreation : "Junction table Entry is not created",
+    junctionTableNotDeleted  : " Junction tale is Entries are not deleted"
+
 }
 
 module.exports = {sql,staticStrings,jwtSecretKey}

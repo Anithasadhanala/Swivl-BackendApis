@@ -195,15 +195,35 @@ class User {
         }
     }
 
+ 
+    async deleteAllJunctionEntries (userId){
+        try {
+            const query = sql.DELETE_junctionTableEntries;
+            const data = await new Promise((resolve, reject) => {
+                db.myQuery(query, [userId], (err, data) => {
+                    if (err) {
+                        reject(false);
+                    } else {
+                        resolve(true);
+                    }
+                });
+            });
+            return data;
+        } catch (error) {
+            return error;
+        }
+    }
 
     // method for deleting specific user
     async deleteUser(id) {
         try {
+            if((await this.deleteAllJunctionEntries(id))===false){
+                return staticStrings.deleteAllJunctionEntries;
+            }
             const query = sql.DELETE_deleteUserQuery;
             const data = await new Promise((resolve, reject) => {
                 db.myQuery(query, [id], (err, data) => {
                     if (err) {
-                        console.error(err); // Log the error for debugging
                         reject(err);
                     } else {
                         resolve(staticStrings.userDeleted);
@@ -212,7 +232,6 @@ class User {
             });
             return data;
         } catch (error) {
-            console.error(error); // Log any catched errors for debugging
             return error;
         }
     }
@@ -233,11 +252,36 @@ class TravelDairy {
     }
 
 
+    async createEntryInJunctionTable(details){
+        const {userId,travelDairyId} = details;
+        try {
+            const query = sql.POST_junctionTableEntry;
+            const data = await new Promise((resolve, reject) => {
+                db.myQuery(query, [userId,travelDairyId], (err, data) => {
+                    if (err) reject(false);
+                    else resolve(true);
+                });
+            });
+            return data;
+        }
+        catch (error) {
+            return error;
+        }
+    }
+
+
     // method for creating new travel location
     async createNewTravel(details){
         const {title, description, location, travelledDate, photo='', category,userId} = details;
         try {
             const id = uuidv4();
+            const details = {
+                userId : userId,
+                travelDairyId  : id,
+            }
+            if((await this.createEntryInJunctionTable(details)) === false){
+                return staticStrings.junctionTableNotCreation;
+            }
             const query = sql.POST_newTravelQuery;
             const data = await new Promise((resolve, reject) => {
                 db.myQuery(query, [id,userId, title, description,category, location, travelledDate, photo], (err, data) => {

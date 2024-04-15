@@ -10,27 +10,28 @@ CREATE TABLE users (
 );
 
 /* Query to create TRAVEL-DAIRY table  **/
-CREATE TABLE travelDairy (
+CREATE TABLE traveldairy (
     id VARCHAR(50) PRIMARY KEY,
     userId VARCHAR(50) NOT NULL,
     title VARCHAR(100) NOT NULL,
     description VARCHAR(255) NOT NULL,
     category VARCHAR(20) NOT NULL,
     location VARCHAR(255) NOT NULL,
-    travelledDate Date NOT NULL,
+    travelledDate DATE NOT NULL,
     photo VARCHAR(255),
-    CONSTRAINT fk_userId FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
 );
+
 
 
 /* Query to create USER-TABLE-DAIRY table **/
-CREATE TABLE userTravelDairy (
+CREATE TABLE usertraveldairy (
     userId VARCHAR(50),
     travelDairyId VARCHAR(50),
-    PRIMARY KEY (userId, travelDairyId),
     FOREIGN KEY (userId) REFERENCES users(id),
-    FOREIGN KEY (travelDairyId) REFERENCES travelDairy(id)
+    FOREIGN KEY (travelDairyId) REFERENCES traveldairy(id)
 );
+
 
 
 /* Query to Inert new users in USERS table  **/
