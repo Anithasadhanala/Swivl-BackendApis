@@ -54,7 +54,7 @@ https://swivl-backendapis.onrender.com
 
 # Test the APIs using POSTMAN collection Remotely :
 
-step 1 : Signin on your postman \\
+step 1 : Signin on your postman  <br/>
 step 2 : click on import \\
 step 3 : paste the url \\
 ```
