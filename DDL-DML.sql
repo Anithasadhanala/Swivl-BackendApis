@@ -33,14 +33,6 @@ CREATE TABLE usertraveldairy (
 );
 
 
-ALTER TABLE usertraveldairy
-ADD CONSTRAINT fk_user_traveldairy FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE;
-
-ALTER TABLE usertraveldairy
- ADD CONSTRAINT fk_user_traveldairy3 FOREIGN KEY (travelDairyId) REFERENCES traveldairy(id) ON DELETE CASCADE;
-
-
-
 
 /* Query to Inert new users in USERS table  **/
 INSERT INTO users (id, userName, phone, email, gender, location, userPassword) 
@@ -57,8 +49,6 @@ INSERT INTO userTravelDairy (userId, travelDairyId)
 VALUES ('1', '1'),
        ('1', '2'),
        ('2', '3');
-
-
 
 
 /* Triggger for automatically adding a feild in junction table when a new travel is added at travelDairy*/
@@ -86,3 +76,16 @@ END;
 //
 
 DELIMITER ;
+
+
+
+/* Allowing users table to delete fields on usertraveldairy */
+ALTER TABLE usertraveldairy
+ADD CONSTRAINT fk_user_traveldairy FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE;
+
+
+
+/* Allowing traveldairy table to delete fields on usertraveldairy */
+ALTER TABLE usertraveldairy
+ ADD CONSTRAINT fk_user_traveldairy2 FOREIGN KEY (travelDairyId) REFERENCES traveldairy(id) ON DELETE CASCADE;
+
