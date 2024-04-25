@@ -420,14 +420,6 @@ class TravelDairy {
 
 
 
-//GET user existance results
-app.get('/user/:username',async(req,res)=>{
-   const obj = new User();
-   const userName = req.params.username
-   const result = await obj.userExists(userName)
-   res.send(result)
-});
-
 
 //POST user Registration
 app.post('/register',async(req,res)=>{

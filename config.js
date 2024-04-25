@@ -1,9 +1,9 @@
 const configurationData = {
     host: "sql6.freesqldatabase.com",
-    user: "sql6698988",
+    user: "	sql6701997",
     port: "3306",
-    database: "sql6698988",
-    password: "giB72Mv361",
+    database: "	sql6701997",
+    password: "MQgeDvSJGw",
     insecureAuth : true
 }
 
