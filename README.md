@@ -44,13 +44,13 @@ DataBase : Mysql v8.0, Mysql workbench (Hosted at freesqlDB)
 
 ```
 
-# DataBase host at: 
+# DataBase hosted at: 
 
 ```
 url : https://www.phpmyadmin.co/
 server : sql6.freesqldatabase.com
-userName : 	sql6698988
-password : giB72Mv361
+userName : 	sql6701997
+password : MQgeDvSJGw
 ```
 
 
