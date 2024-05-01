@@ -25,7 +25,7 @@ DataBase : Mysql v8.0, Mysql workbench (Hosted at freesqlDB)
 ```
 1. OOPS in javascript for Encapsulated modules and authorised routes.
 2. There are 2 main classes " user "  and  " TravelDairy ".
-3. APIs of user class: ( total 6)
+3. APIs of user class: ( total 6 )
       3.1 - creating a new User
       3.2 - user login
       3.3 - user profile update
